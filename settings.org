@@ -1,0 +1,298 @@
+* Legacy dotemacs
+#+BEGIN_SRC emacs-lisp
+;;; -*- lexical-binding: t; mode: emacs-lisp -*-
+
+(dolist (path
+	 (list
+	  "~/.emacs.d/personal"
+	  "~/src/purcell-mmm-mode"
+	  "~/src/csound-x/stef-elisp"
+	  "~/.emacs.d/pomidor/"
+	  "~/Desktop/Emacs/bin/ess-16.04/lisp"
+	  ))
+  (add-to-list 'load-path
+	       (directory-file-name
+		(expand-file-name path))))
+	       
+
+;; WINDOWS specific
+(setenv "PATH"
+  (concat
+   "C:\\Users\\JC30913\\Git\\usr\\bin;"
+   "C:\\Users\\JC30913\\src\\csound\\dist\\bin;"   
+   (getenv "PATH")))
+
+(setq grep-command "grep --exclude-dir='*Rproj*' -n -r -e ")
+(setq null-device "/dev/null")
+
+(require 'package)
+;; (setq package-archives '(("gnu" . "http://elpa.gnu.org/packages/")
+;;                          ("marmalade" . "http://marmalade-repo.org/packages/")
+;;                          ("melpa" . "http://melpa.org/packages/")))
+
+(add-to-list 'package-archives '("melpa" . "http://melpa.org/packages/"))
+(add-to-list 'package-archives
+             '("melpa-stable" . "http://stable.melpa.org/packages/"))
+
+(package-initialize)
+
+;; KEYBINDINGS
+
+(global-set-key [f1] 'calendar)
+
+(define-prefix-command 'kill-prefix)
+(global-set-key [f2] kill-prefix)
+(global-set-key (kbd "<f2> b") 'kill-buffer)
+(global-set-key (kbd "<f2> w") 'delete-window)
+(global-set-key (kbd "<f2> f") 'delete-frame)
+(global-set-key (kbd "<f2> l") 'kill-line)
+
+(global-set-key [f4] 'toggle-journal-entry-elisp)
+(global-set-key [f5] 'toggle-journal-entry-local)
+(global-set-key [f6] (lambda () (interactive) (message "YOUR NEW FUNCTION COULD BE HERE!")))
+(global-set-key [f9] 'check-off)
+(global-set-key [f10] 'done-whats-next)
+(global-set-key (kbd "M-n") (lambda () (interactive) (scroll-up 1)))
+(global-set-key (kbd "M-p") (lambda () (interactive) (scroll-down 1)))
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+(global-set-key (kbd "C-x o") 'ace-window)
+(global-set-key (kbd "C-c p") 'winner-undo)
+(global-set-key (kbd "C-c n") 'winner-redo)
+(global-set-key (kbd "C-M-x") 'eval-defun)
+(global-set-key (kbd "M-Q") 'unfill-paragraph)
+(global-set-key (kbd "C-x g") 'magit-status)
+
+;; MODES
+
+;; Emacs Speaks Statistics
+(load "ess-site")
+(setq ess-default-style 'RStudio)
+(setq ess-indent-with-fancy-comments nil)
+
+(require 'polymode)
+(require 'poly-R)
+(require 'poly-markdown)
+(add-to-list 'auto-mode-alist '("\\.Rmd\\'" . poly-markdown+r-mode))
+
+;; Turn off ess-special-assign?
+;; (add-hook 'ess-mode-hook
+;;           (lambda()
+;;             (local-unset-key (kbd "_"))))
+
+(require 'branches)
+(add-to-list 'auto-mode-alist '("\\.branches\\'" . branches-mode))
+
+(add-to-list 'auto-mode-alist '("\\.yml\\'" . yaml-mode))
+
+;; BASIC CUSTOMIZATIONS
+
+(setq backup-directory-alist (quote (("." . "~/backups/emacs"))))
+(setq buffer-file-coding-system 'utf-8)
+(set-language-environment "UTF-8")
+(set-default-coding-systems 'utf-8)
+(toggle-scroll-bar -1)
+(menu-bar-mode -1)
+(tool-bar-mode -1)
+(winner-mode)
+(show-paren-mode t)
+(setq read-buffer-completion-ignore-case t)
+;;(desktop-save-mode 1)
+(setq debug-on-error t)
+(setq bookmark-save-flag 1)
+(setq indent-tabs-mode nil)
+(setq visible-bell t)
+(desktop-save-mode 1)
+
+;; CUSTOM-SET-STUFF
+
+(custom-set-variables
+ ;; custom-set-variables was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ '(custom-safe-themes
+   (quote
+    ("f5512c02e0a6887e987a816918b7a684d558716262ac7ee2dd0437ab913eaec6" default)))
+ '(package-selected-packages
+   (quote
+    (2048-game ac-cider ace-jump-mode pomidor btc-ticker org-brain ivy-historian projectile zenburn-theme yaml-mode polymode markdown-mode magit lispy helm gnugo elisp-refs))))
+(custom-set-faces
+ ;; custom-set-faces was added by Custom.
+ ;; If you edit it by hand, you could mess it up, so be careful.
+ ;; Your init file should contain only one such instance.
+ ;; If there is more than one, they won't work right.
+ )
+
+;; PERSONAL FUNCTIONS
+
+(setq journal-file-path "g:/EQShare/Execution Engineers/Jay Cotton/jayslog.txt")
+(setq local-journal-file-path (file-truename "~/AppData/Roaming/jaysloglocal.txt"))
+
+(defun journal-entry-header (&optional prefix)
+  (let* ((weekdays '("Sunday" "Monday" "Tuesday" "Wednesday" "Thursday" "Friday" "Saturday"))
+         (today (nth (string-to-number (format-time-string "%w")) weekdays))
+	 (prefix-str (or prefix "***")))
+    (concat (format-time-string (concat prefix-str " %Y-%m-%d\n" prefix-str " %R\n" prefix-str " ")) today "\n\n")))
+
+(defun insert-journal-entry (&optional prefix)
+  (interactive)
+  (insert (journal-entry-header prefix)))
+
+(defun latest-at-top-entry (func &optional prefix)
+  (interactive)
+  (beginning-of-buffer)
+  (let ((bob (point)))
+    (re-search-forward "[^[:space:]\n]" nil t) ;goto first non-whitespace char
+    (backward-char 1)
+    (delete-region bob (point)))
+  (insert "\n\n")
+  (beginning-of-buffer)
+  (funcall func prefix))
+
+(let ((saved-buffer))
+  (defun toggle-journal-entry (file-path command-to-match &optional prefix)
+    (interactive)
+    (let ((cb (current-buffer)))
+      (if (equal (buffer-file-name) file-path)
+          (if (equal last-command command-to-match)
+              (latest-at-top-entry 'insert-journal-entry prefix)
+            (progn
+              (save-buffer)
+              (switch-to-buffer saved-buffer)))
+        (progn
+          (setq saved-buffer cb)
+          (find-file file-path))))))
+
+(defun toggle-journal-entry-shared ()
+  (interactive)
+  (toggle-journal-entry journal-file-path this-command))
+
+(defun toggle-journal-entry-local ()
+  (interactive)
+  (toggle-journal-entry local-journal-file-path this-command))
+
+(defun toggle-journal-entry-elisp ()
+  (interactive)
+  (toggle-journal-entry "c:/Users/JC30913/scratch.el" this-command ";;;"))
+
+(defun check-off ()
+  (interactive)
+  (save-excursion
+    (back-to-indentation)
+    (insert "✔ "))
+  (next-line))
+
+;;; Stefan Monnier <foo at acm.org>. It is the opposite of fill-paragraph    
+(defun unfill-paragraph (&optional region)
+  "Takes a multi-line paragraph and makes it into a single line of text."
+  (interactive (progn (barf-if-buffer-read-only) '(t)))
+  (let ((fill-column (point-max))
+	;; This would override `fill-column' if it's an integer.
+	(emacs-lisp-docstring-fill-column t))
+    (fill-paragraph nil region)))
+
+;; KEYBOARD MACROS
+
+;; iterate what's next
+(fset 'done-whats-next
+   (lambda (&optional arg) "Keyboard macro." (interactive "p") (kmacro-exec-ring-item (quote ([134217837 6 6 67108896 19 110 101 120 116 58 32 return 23 14 25 16 134217848 99 104 101 99 107 45 102 backspace 111 102 tab return] 0 "%d")) arg)))
+
+;; NETWORK SETTINGS
+
+(setq url-proxy-services
+   '(("no_proxy" . "^\\(localhost\\|10.*\\)")
+     ("http" . "webproxy.wlb2.nam.nsroot.net:8080")
+     ("https" . "webproxy.wlb2.nam.nsroot.net:8080")))
+
+(setq url-http-proxy-basic-auth-storage
+    (list (list "proxy.com:8080"
+                (cons "Input your LDAP UID !"
+                      (base64-encode-string "jc30919:goingcali_5")))))
+
+
+
+
+;; SHOW JOURNAL ON STARTUP
+
+(setq inhibit-startup-screen t)
+
+;; For now, I can't seem to make the following expression set
+;; last-command, which I want to happen. I guess it gets called before
+;; entering the main command loop. Setting it explicitly doesn't help
+;; either; ie., I guess the command loop initializes the variable to
+;; null - followup: if it's so hard, am I doing it wrong?
+;; (add-hook 'emacs-startup-hook
+;; 	  (lambda () (command-execute 'toggle-journal-entry-shared t)))
+
+(load-theme 'zenburn)
+
+;; Experimental
+
+(setq gnugo-program "c:/Users/JC30913/Desktop/gnugo/gnugo-3.8/gnugo.exe")
+
+(defun split-window-reveal-prev-buffer ()
+  (interactive)
+  (let ((window (split-window-right)))
+    (set-window-buffer window (other-buffer))))
+
+(define-key 'help-command (kbd "C-l") 'find-library)
+(define-key 'help-command (kbd "C-f") 'find-function)
+(define-key 'help-command (kbd "C-k") 'find-function-on-key)
+(define-key 'help-command (kbd "C-v") 'find-variable)
+
+(defun insert-tab () (interactive) (insert "\C-i"))
+
+(load-library "url-handlers")
+
+(require 'pomidor)
+
+
+(defun my-randomize-region (beg end)
+    "Randomize lines in region from BEG to END."
+    (interactive "*r")
+    (let ((lines (split-string
+                   (delete-and-extract-region beg end) "\n")))
+      (when (string-equal "" (car (last lines 1)))
+        (setq lines (butlast lines 1)))
+      (apply 'insert
+        (mapcar 'cdr
+        (sort (mapcar (lambda (x) (cons (random) (concat x "\n"))) lines)
+              (lambda (a b) (< (car a) (car b))))))))
+
+(defun asc:flash-background ()
+  (interactive)
+  (let ((fg (face-foreground 'default))
+        (bg (face-background 'default)))
+    (set-face-background 'default "DodgerBlue")
+    (set-face-foreground 'default "black")
+    (run-with-idle-timer
+     0.25 nil (lambda ()
+                (set-face-background 'default bg)
+                (set-face-foreground 'default fg)))))
+
+(require 'stef-elisp)
+
+#+END_SRC
+* Current and Future Config
+** Language Modes
+*** q
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path (directory-file-name (expand-file-name "~/src/q-mode")))
+(autoload 'q-mode "q-mode")
+(add-to-list 'auto-mode-alist '("\\.[kq]\\'" . q-mode))
+#+END_SRC
+** Org
+#+BEGIN_SRC emacs-lisp
+(require 'org)
+
+(global-set-key (kbd "C-c c") 'org-capture)
+(global-set-key (kbd "C-c a") 'org-agenda)
+
+(setq org-directory "~/org")
+(setq org-default-notes-file (concat org-directory "/unfiled.org"))
+(setq org-agenda-files `(,org-directory))
+; todo-hack: should be a better way to simply say: all agenda files, all headers
+(setq org-refile-targets '((org-agenda-files . (:regexp . "."))))
+(setq org-refile-use-outline-path t)
+(setq org-outline-path-complete-in-steps t)
+#+END_SRC
