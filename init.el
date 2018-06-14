@@ -1,5 +1,5 @@
 (require 'org)
-(find-file (concat user-emacs-directory "init.org"))
+(find-file (concat user-emacs-directory "settings.org"))
 (org-babel-tangle)
-(load-file (concat user-emacs-directory "init.el"))
-(byte-compile-file (concat user-emacs-directory "init.el"))
+(load-file "settings.el")
+;(byte-compile-file (concat user-emacs-directory "init.el"))
