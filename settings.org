@@ -2,6 +2,9 @@
 #+BEGIN_SRC emacs-lisp :tangle no
 ;;; -*- lexical-binding: t; mode: emacs-lisp -*-
 
+(require 'exwm)
+(require 'exwm-config)
+
 (dolist (path
 	 (list
 	  "~/.emacs.d/personal"
@@ -259,7 +262,7 @@
   (defun toggle-journal-entry-helper (file-path command-to-match &optional prefix)
     (interactive)
     (let ((cb (current-buffer)))
-      (if (equal (expand-file-name (buffer-file-name)) (expand-file-name file-path))
+      (if (equal (expand-file-name (or buffer-file-name "")) (expand-file-name file-path))
           (if (equal last-command command-to-match)
               (latest-at-top-entry 'insert-journal-entry prefix)
             (progn
